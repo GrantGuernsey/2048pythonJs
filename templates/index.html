@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2048 Game</title>
+    <style>
+        /* Base Styles */
+        #game-table {
+            margin: 0 auto;
+            border-collapse: collapse;
+        }
+    
+        #game-table td {
+            width: 60px;
+            height: 60px;
+            border: 1px solid #000;
+            text-align: center;
+            font-size: 18px;
+        }
+    
+        #score-container,
+        #high-score-container {
+            background-color: #EEE4DA;
+            padding: 10px;
+            display: inline-block;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            margin-top: 10px;
+        }
+    
+        #game-over-message {
+            text-align: center;
+            font-size: 24px;
+            padding: 10px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+    
+        #restart-button {
+            background-color: #EDC22E;
+            color: white;
+            padding: 12px;
+            font-size: 18px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+    
+        #restart-button:hover {
+            background-color: #EDC53F;
+        }
+    
+        h1,
+        h2 {
+            text-align: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+        }
+    
+        /* Dark Mode Styles */
+        .dark-mode {
+            background-color: #333;
+            color: #fff;
+        }
+    
+        .dark-mode #score-container,
+        .dark-mode #high-score-container,
+        .dark-mode #game-over-message,
+        .dark-mode #restart-button {
+            color: #333;
+        }
+    
+        .dark-mode h1,
+        .dark-mode h2 {
+            color: #fff;
+        }
+
+    </style>    
+</head>
+
+<body>
+    <h1>2048 Game <button id="restart-button" onclick="restartGame()">Restart</button></h1>
+    <h1>
+        <div id="score-container">Score: 0</div>
+        <div id="high-score-container">High Score: 0</div>
+    </h1>
+    <div id="game-over-message"></div>
+    <table id="game-table"></table>
+    <h2> Made by: Grant Guernsey</h2>
+    <h2> GitHub: <a href = "https://github.com/GrantGuernsey?tab=repositories" target="_blank">Link</a></h2>
+    <div  style ="text-align:center;">
+        <label for="dark-mode-toggle">Dark Mode:</label>
+        <input type="checkbox" id="dark-mode-toggle" onchange="toggleDarkMode()">
+    </div>
+    <script>
+        let highScore = 0
+        let currentScore = 0;
+
+        async function fetchGameState() {
+            const response = await fetch('/get_game_state');
+            const {
+                game_state,
+                score,
+                game_over
+            } = await response.json();
+
+            renderGame(game_state, score);
+
+            if (game_over) {
+                renderGameOver(score);
+            }
+        }
+
+        async function sendMove(direction) {
+            const response = await fetch(`/move/${direction}`);
+            const {
+                game_state,
+                score,
+                game_over
+            } = await response.json();
+
+            renderGame(game_state, score);
+
+            if (game_over) {
+                renderGameOver(score);
+            }
+        }
+
+        function renderGame(gameState, score) {
+            const gameTable = document.getElementById('game-table');
+            gameTable.innerHTML = '';
+
+            for (let i = 0; i < gameState.length; i++) {
+                const row = gameTable.insertRow();
+                for (let j = 0; j < gameState[i].length; j++) {
+                    const cell = row.insertCell();
+                    const cellValue = gameState[i][j];
+                    cell.textContent = cellValue || '';
+                    cell.style.backgroundColor = getCellColor(cellValue);
+                }
+            }
+
+            currentScore = score;
+            document.getElementById('score-container').textContent = `Score: ${currentScore}`;
+
+            if (currentScore >= highScore) {
+                highScore = currentScore
+                document.getElementById('high-score-container').textContent = `High Score: ${currentScore}`;
+            }
+        }
+
+        function renderGameOver(score) {
+            const gameOverMessage = document.getElementById('game-over-message');
+            gameOverMessage.textContent = `Game Over: Total Score ${score}`;
+        }
+
+        function getCellColor(value) {
+            const colors = {
+                0: "#FFFFFF",
+                2: "#EEE4DA",
+                4: "#EDE0C8",
+                8: "#F2B179",
+                16: "#F59563",
+                32: "#F67C5F",
+                64: "#F65E3B",
+                128: "#EDCF72",
+                256: "#EDCC61",
+                512: "#EDC850",
+                1024: "#EDC53F",
+                2048: "#EDC22E"
+            };
+            return colors[value] || "#FFF";
+        }
+
+        function restartGame() {
+            fetch('/restart_game')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('game-over-message').textContent = '';
+                    renderGame(data.game_state, data.score);
+                });
+        }
+
+        document.addEventListener('keydown', (event) => {
+            const key = event.key.toLowerCase();
+            if (['w', 's', 'a', 'd'].includes(key)) {
+                sendMove(key);
+            }
+        });
+
+        function toggleDarkMode() {
+            const darkModeToggle = document.getElementById('dark-mode-toggle');
+            const body = document.body;
+            
+            if (darkModeToggle.checked) {
+                body.classList.add('dark-mode');
+            } else {
+                body.classList.remove('dark-mode');
+            }
+        }
+        fetchGameState();
+    </script>
+</body>
+
+</html>

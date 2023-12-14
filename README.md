@@ -1,5 +1,6 @@
 This is a personal project to play 2048 on a webpage using Flask and js
 
+An important note is after each game is finished, a score file will be saved as a csv. This shows all the moves and all the boards that were made during this game. My goal is to use this information for a different data science project. 
 # Step 1: Setting up the environment
 To run this code you need to do a few python imports first.
 You can copy and paste this into your terminal if you use pip.
